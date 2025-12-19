@@ -1309,8 +1309,43 @@ out:
 
 static EVENT_HANDLER(MOUSE_MOVED)
 {
+    if (mission_control_is_active()) goto out;
+
+    uint8_t mod = (uint8_t) param1;
+    bool is_z = (param1 >> 8) & 1;
+    bool is_x = (param1 >> 9) & 1;
+
+    if (mod == g_mouse_state.modifier && (is_z || is_x)) {
+        if (!g_mouse_state.window) {
+            CGPoint point = CGEventGetLocation(context);
+            struct window *window = window_manager_find_window_at_point(&g_window_manager, point);
+            if (!window || window_check_flag(window, WINDOW_FULLSCREEN)) goto out;
+
+            g_mouse_state.window = window;
+            g_mouse_state.window_frame = g_mouse_state.window->frame;
+            g_mouse_state.down_location = point;
+            g_mouse_state.direction = 0;
+            g_mouse_state.current_action = is_z ? MOUSE_MODE_MOVE : MOUSE_MODE_RESIZE;
+
+            if (g_mouse_state.current_action == MOUSE_MODE_RESIZE) {
+                CGPoint frame_mid = { CGRectGetMidX(g_mouse_state.window_frame), CGRectGetMidY(g_mouse_state.window_frame) };
+                if (point.x < frame_mid.x) g_mouse_state.direction |= HANDLE_LEFT;
+                if (point.y < frame_mid.y) g_mouse_state.direction |= HANDLE_TOP;
+                if (point.x > frame_mid.x) g_mouse_state.direction |= HANDLE_RIGHT;
+                if (point.y > frame_mid.y) g_mouse_state.direction |= HANDLE_BOTTOM;
+            }
+        } else {
+            CFRetain(context);
+            EVENT_HANDLER_MOUSE_DRAGGED(context, 0);
+        }
+        goto out;
+    } else if (g_mouse_state.window && !g_mouse_state.consume_mouse_click && (g_mouse_state.current_action == MOUSE_MODE_MOVE || g_mouse_state.current_action == MOUSE_MODE_RESIZE)) {
+        CFRetain(context);
+        EVENT_HANDLER_MOUSE_UP(context, 0);
+        goto out;
+    }
+
     if (g_window_manager.ffm_mode == FFM_DISABLED) goto out;
-    if (mission_control_is_active())               goto out;
     if (g_mouse_state.ffm_window_id)               goto out;
 
     CGPoint point = CGEventGetLocation(context);

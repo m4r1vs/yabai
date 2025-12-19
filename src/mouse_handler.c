@@ -1,4 +1,5 @@
 extern struct event_loop g_event_loop;
+extern struct window_manager g_window_manager;
 
 static inline uint8_t mouse_mod_from_cgflags(uint32_t cgflags)
 {
@@ -58,11 +59,32 @@ static MOUSE_HANDLER(mouse_handler)
         mouse_state->drag_detected = true;
         event_loop_post(&g_event_loop, MOUSE_DRAGGED, (void *) CFRetain(event), 0);
     } break;
+    case kCGEventKeyDown:
+    case kCGEventKeyUp: {
+        uint8_t mod = mouse_mod_from_cgflags(CGEventGetFlags(event));
+        CGKeyCode key = (CGKeyCode) CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+        bool is_z = key == kVK_ANSI_Z;
+        bool is_x = key == kVK_ANSI_X;
+
+        if (is_z) mouse_state->key_z_down = type == kCGEventKeyDown;
+        if (is_x) mouse_state->key_x_down = type == kCGEventKeyDown;
+
+        if (mod == mouse_state->modifier && (is_z || is_x)) return NULL;
+    } break;
     case kCGEventMouseMoved: {
         uint8_t mod = mouse_mod_from_cgflags(CGEventGetFlags(event));
-        if (mod == mouse_state->modifier) return event;
+        bool is_z = mouse_state->key_z_down;
+        bool is_x = mouse_state->key_x_down;
+        bool process_event = (mod == mouse_state->modifier && (is_z || is_x)) ||
+                             (mouse_state->window && !mouse_state->consume_mouse_click) ||
+                             (mod != mouse_state->modifier && g_window_manager.ffm_mode != FFM_DISABLED);
 
-        event_loop_post(&g_event_loop, MOUSE_MOVED, (void *) CFRetain(event), mod);
+        if (process_event) {
+            int param1 = mod | (is_z << 8) | (is_x << 9);
+            event_loop_post(&g_event_loop, MOUSE_MOVED, (void *) CFRetain(event), param1);
+        }
+
+        if (mod == mouse_state->modifier) return event;
     } break;
     }
 
@@ -252,6 +274,8 @@ void mouse_state_init(struct mouse_state *state)
     state->action1     = MOUSE_MODE_MOVE;
     state->action2     = MOUSE_MODE_RESIZE;
     state->drop_action = MOUSE_MODE_SWAP;
+    state->key_z_down  = false;
+    state->key_x_down  = false;
 }
 
 bool mouse_handler_begin(struct mouse_state *mouse_state, uint32_t mask)
