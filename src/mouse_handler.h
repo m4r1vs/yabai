@@ -9,14 +9,19 @@
                              (1 << kCGEventRightMouseUp) | \
                              (1 << kCGEventRightMouseDragged) | \
                              (1 << /* kCGSEventDockControl */ 30)
+                             (1 << kCGEventKeyDown) | \
+                             (1 << kCGEventKeyUp)
 
-#define MOUSE_EVENT_MASK     (1 << kCGEventLeftMouseDown) | \
+#define MOUSE_EVENT_MASK     (1 << kCGEventMouseMoved) | \
+                             (1 << kCGEventLeftMouseDown) | \
                              (1 << kCGEventLeftMouseUp) | \
                              (1 << kCGEventLeftMouseDragged) | \
                              (1 << kCGEventRightMouseDown) | \
                              (1 << kCGEventRightMouseUp) | \
                              (1 << kCGEventRightMouseDragged) | \
                              (1 << /* kCGSEventDockControl */ 30)
+                             (1 << kCGEventKeyDown) | \
+                             (1 << kCGEventKeyUp)
 
 #define MOUSE_HANDLER(name) CGEventRef name(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *context)
 
@@ -78,6 +83,8 @@ struct mouse_state
     uint32_t ffm_window_id;
     uint8_t direction;
     struct window_node *feedback_node;
+    bool key_z_down;
+    bool key_x_down;
 };
 
 static char *mouse_mod_str[] =
