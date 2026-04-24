@@ -8,7 +8,7 @@
                              (1 << kCGEventRightMouseDown) | \
                              (1 << kCGEventRightMouseUp) | \
                              (1 << kCGEventRightMouseDragged) | \
-                             (1 << /* kCGSEventDockControl */ 30)
+                             (1 << /* kCGSEventDockControl */ 30) | \
                              (1 << kCGEventKeyDown) | \
                              (1 << kCGEventKeyUp)
 
@@ -19,7 +19,7 @@
                              (1 << kCGEventRightMouseDown) | \
                              (1 << kCGEventRightMouseUp) | \
                              (1 << kCGEventRightMouseDragged) | \
-                             (1 << /* kCGSEventDockControl */ 30)
+                             (1 << /* kCGSEventDockControl */ 30) | \
                              (1 << kCGEventKeyDown) | \
                              (1 << kCGEventKeyUp)
 
